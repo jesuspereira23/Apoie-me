@@ -25,10 +25,12 @@ export default function HomeScreen() {
         <Image source={require('../assets/images/logo-sbg.png')} style={styles.logo} resizeMode="contain" />
 
         {/* Títulos */}
-        <Text style={styles.title}>Transforme vidas. Apoie um orfanato.</Text>
+        <Text style={styles.titleTop}>Transforme vidas</Text>
+        <Text style={styles.titleBottom}>Apoie um orfanato</Text>
         <Text style={styles.subtitle}>
-          Conectamos orfanatos que precisam com pessoas que querem fazer a diferença.
-        </Text>
+          Conectamos orfanatos que precisam{"\n"}com pessoas que querem fazer a diferença.
+        </Text>   
+
 
         {/* Ilustração central */}
         <Image source={require('../assets/images/img-crianca.png')} style={styles.illustration} resizeMode="contain" />
@@ -66,13 +68,25 @@ export default function HomeScreen() {
           <Pressable onPress={() => router.push('../login')}>
             <Text style={styles.link}>Entrar</Text>
           </Pressable>
-        </View>
 
-        {/* Rodapé */}
-        <Text style={styles.footer}>
-          Dados de cadastro e transparência disponíveis na plataforma.
-        </Text>
-      </View>
+          {/* Rodapé */}
+          <View style={styles.footerContainer}>
+            <View style={styles.shieldWithArrow}>
+              <Ionicons name="shield-outline" size={40} color={Colors.verdeAguaClaro} />
+              <Ionicons 
+                name="download-outline" 
+                size={20} 
+                color={Colors.verdeAguaEscuro} 
+                style={styles.arrowInsideShield} 
+              />
+            </View>
+            <Text style={styles.footer}>
+              Sua doação é segura e transparente.{"\n"}
+              Apoiamos orfanatos com responsabilidade.
+            </Text>
+          </View>
+        </View>
+      </View>  
 
       {/* Modal de ajuda */}
       <Modal visible={showHelp} transparent animationType="fade">
@@ -81,7 +95,7 @@ export default function HomeScreen() {
             <Text style={styles.modalTitle}>Como funciona?</Text>
 
             <View style={styles.modalSection}>
-              <Ionicons name="heart-outline" size={28} color={Colors.verdeAgua} style={styles.modalIcon} />
+              <Ionicons name="heart-outline" size={28} color={Colors.verdeAguaEscuro} style={styles.modalIcon} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.modalSectionTitle}>Se você for um apoiador:</Text>
                 <Text style={styles.modalText}>
@@ -93,7 +107,7 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.modalSection}>
-              <MaterialIcons name="home" size={28} color={Colors.laranja} style={styles.modalIcon} />
+              <MaterialIcons name="home" size={28} color={Colors.verdeAguaEscuro} style={styles.modalIcon} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.modalSectionTitle}>Se você for um orfanato:</Text>
                 <Text style={styles.modalText}>
@@ -119,7 +133,7 @@ const styles = StyleSheet.create({
   header: { position: 'absolute', top: 40, right: 20, zIndex: 10 },
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 12 },
   contentScale: { transform: [{ scale: 0.92 }] },
-  logo: { width: 190, height: 190, marginBottom: 16 },
+  logo: { width: 150, height: 150, marginBottom: 16 },
   cardContainer: {
     width: '100%',
     borderRadius: 24,
@@ -134,8 +148,30 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 4,
   },
+  titleTop: {
+  fontSize: 22,
+  fontWeight: '700',
+  textAlign: 'center',
+  color: '#333',
+  marginBottom: 2,
+  },
+  titleBottom: {
+    fontSize: 22,
+    fontWeight: '800',
+    textAlign: 'center',
+    color: Colors.verdeAguaClaro,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 12,
+    textAlign: 'center',
+    color: '#666',
+    marginBottom: 16,
+    lineHeight: 20,       // aumenta espaçamento entre linhas
+    paddingHorizontal: 24 // deixa mais estreito no celular
+  },
+
   title: { fontSize: 18, fontWeight: '700', textAlign: 'center', marginBottom: 6 },
-  subtitle: { fontSize: 13, textAlign: 'center', color: '#666', marginBottom: 18 },
   illustration: { width: 270, height: 270, marginBottom: -50, position: 'relative', zIndex: 2 },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 18, backgroundColor: '#fff', borderRadius: 18, overflow: 'hidden' },
   card: { flex: 1, alignItems: 'center', paddingVertical: 14 },
@@ -147,13 +183,37 @@ const styles = StyleSheet.create({
   primaryButtonText: { color: '#fff', fontWeight: '600', textAlign: 'center' },
   secondaryButton: { borderWidth: 1, borderColor: Colors.verdeAgua, paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, marginBottom: 10, alignItems: 'center' },
   secondaryButtonText: { color: Colors.verdeAgua, fontWeight: '600', textAlign: 'center' },
-  link: { color: Colors.azul, marginBottom: 14, textAlign: 'center', alignSelf: 'center' },
-  footer: { fontSize: 9, color: '#999', textAlign: 'center', marginTop: 16, paddingBottom: 4 },
+  link: { color: Colors.verdeAguaClaro, marginBottom: 7, textAlign: 'center', alignSelf: 'center' },
+  footerContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  marginTop: 7,
+  paddingHorizontal: 20,
+  },
+  shieldWithArrow: {
+    position: 'relative',
+    width: 40,
+    height: 40,
+    marginRight: 10,
+  },
+  arrowInsideShield: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -10 }, { translateY: -10 }],
+  },
+  footer: {
+    fontSize: 11,
+    color: '#666',
+    textAlign: 'left',
+    lineHeight: 18,
+  },
 
   // Modal styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 },
   modalCard: { backgroundColor: '#fff', borderRadius: 20, padding: 24, width: '90%', maxWidth: 420, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 12, elevation: 6 },
-  modalTitle: { fontSize: 22, fontWeight: '800', marginBottom: 16, color: Colors.verdeAgua, textAlign: 'center' },
+  modalTitle: { fontSize: 22, fontWeight: '800', marginBottom: 16, color: Colors.verdeAguaEscuro, textAlign: 'center' },
   modalSection: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 14 },
   modalIcon: { marginRight: 12, marginTop: 2 },
     modalSectionTitle: { 
@@ -161,7 +221,7 @@ const styles = StyleSheet.create({
     fontWeight: '700', 
     marginTop: 4, 
     marginBottom: 6, 
-    color: Colors.laranja 
+    color: Colors.verdeAguaEscuro 
   },
   modalText: { 
     fontSize: 14, 
@@ -170,7 +230,7 @@ const styles = StyleSheet.create({
     lineHeight: 20 
   },
   closeButton: { 
-    backgroundColor: Colors.azul, 
+    backgroundColor: Colors.verdeAguaEscuro, 
     paddingVertical: 12, 
     borderRadius: 10, 
     alignItems: 'center', 

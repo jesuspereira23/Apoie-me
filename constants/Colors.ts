@@ -1,5 +1,7 @@
 export default {
-  verdeAgua: '#00b894',
-  laranja: '#ff6f00',
-  azul: '#0077b6',
+  verdeAgua: "#399D9F",   // principal
+  verdeAguaClaro: "#3FA0A2", 
+  verdeAguaEscuro: "#1A8E91",
+  laranja: "#F97316",
+  azul: "#2563EB",
 };
