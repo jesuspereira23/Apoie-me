@@ -39,17 +39,23 @@ export default function HomeScreen() {
           {/* Cards com ícones */}
           <View style={styles.row}>
             <View style={[styles.card, styles.cardDivider]}>
-              <Ionicons name="heart-outline" size={32} color={Colors.verdeAgua} />
+              <View style={[styles.iconCircle, { backgroundColor: Colors.verdeAgua }]}>
+                <Ionicons name="heart" size={20} color="#fff" />
+              </View>
               <Text style={styles.cardTitle}>Apoie</Text>
               <Text style={styles.cardText}>Dê itens, tempo ou recursos.</Text>
             </View>
             <View style={[styles.card, styles.cardDivider]}>
-              <MaterialIcons name="home" size={32} color={Colors.laranja} />
+              <View style={[styles.iconCircle, { backgroundColor: Colors.laranja }]}>
+                <MaterialIcons name="favorite" size={20} color="#fff" />
+              </View>
               <Text style={styles.cardTitle}>Fortaleça</Text>
               <Text style={styles.cardText}>Ajude orfanatos a cuidarem melhor das crianças.</Text>
             </View>
             <View style={styles.card}>
-              <Ionicons name="people" size={32} color={Colors.azul} />
+              <View style={[styles.iconCircle, { backgroundColor: Colors.azul }]}>
+                <Ionicons name="people" size={20} color="#fff" />
+              </View>
               <Text style={styles.cardTitle}>Transforme</Text>
               <Text style={styles.cardText}>Sua doação gera impacto positivo e contínuo.</Text>
             </View>
@@ -71,15 +77,7 @@ export default function HomeScreen() {
 
           {/* Rodapé */}
           <View style={styles.footerContainer}>
-            <View style={styles.shieldWithArrow}>
-              <Ionicons name="shield-outline" size={40} color={Colors.verdeAguaClaro} />
-              <Ionicons 
-                name="download-outline" 
-                size={20} 
-                color={Colors.verdeAguaEscuro} 
-                style={styles.arrowInsideShield} 
-              />
-            </View>
+            <Ionicons name="shield-checkmark" size={32} color={Colors.verdeAguaClaro} style={styles.shieldIcon} />
             <Text style={styles.footer}>
               Sua doação é segura e transparente.{"\n"}
               Apoiamos orfanatos com responsabilidade.
@@ -174,8 +172,16 @@ const styles = StyleSheet.create({
   title: { fontSize: 18, fontWeight: '700', textAlign: 'center', marginBottom: 6 },
   illustration: { width: 270, height: 270, marginBottom: -50, position: 'relative', zIndex: 2 },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 18, backgroundColor: '#fff', borderRadius: 18, overflow: 'hidden' },
-  card: { flex: 1, alignItems: 'center', paddingVertical: 14 },
+  card: { flex: 1, alignItems: 'center', paddingVertical: 14, paddingHorizontal: 4 },
   cardDivider: { borderRightWidth: 1, borderRightColor: '#e0e0e0' },
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 6,
+  },
   cardTitle: { fontSize: 14, fontWeight: '600', marginBottom: 4 },
   cardText: { fontSize: 11, textAlign: 'center', color: '#555' },
   primaryButton: { backgroundColor: Colors.verdeAgua, paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, marginBottom: 10, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' },
@@ -185,23 +191,14 @@ const styles = StyleSheet.create({
   secondaryButtonText: { color: Colors.verdeAgua, fontWeight: '600', textAlign: 'center' },
   link: { color: Colors.verdeAguaClaro, marginBottom: 7, textAlign: 'center', alignSelf: 'center' },
   footerContainer: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginTop: 7,
-  paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 7,
+    paddingHorizontal: 20,
   },
-  shieldWithArrow: {
-    position: 'relative',
-    width: 40,
-    height: 40,
+  shieldIcon: {
     marginRight: 10,
-  },
-  arrowInsideShield: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -10 }, { translateY: -10 }],
   },
   footer: {
     fontSize: 11,
