@@ -361,18 +361,30 @@ export default function SignUpOrfanatoScreen() {
                 </>
               ) : (
                 <>
-                  <View style={styles.headerSection}>
-                    <View style={styles.headerText}>
-                      <Text style={styles.title}>Crie sua senha</Text>
-                      <Text style={styles.subtitle}>
-                        Crie uma senha segura para acessar o painel do seu
-                        orfanato
-                      </Text>
-                    </View>
+                  {/* Cabeçalho: texto acima da imagem, centralizado */}
+                  <View style={styles.step2Header}>
+                    <Text style={styles.title}>Crie sua senha</Text>
+                    <Text style={styles.subtitle}>
+                      Crie uma senha segura para acessar a{"\n"}conta do seu orfanato
+                    </Text>
+                    <Image
+                      source={require("../../assets/images/img-crianca-casa.png")}
+                      style={styles.illustrationCenter}
+                      resizeMode="contain"
+                    />
                   </View>
 
                   <View style={styles.formBox}>
-                    <Text style={styles.sectionTitle}>Dados de acesso</Text>
+                    {/* Ícone + título da seção */}
+                    <View style={styles.sectionTitleRow}>
+                      <MaterialIcons name="lock" size={20} color={Colors.verdeAgua} />
+                      <View style={{ marginLeft: 8 }}>
+                        <Text style={styles.sectionTitle}>Dados de acesso</Text>
+                        <Text style={styles.sectionSubtitle}>
+                          Sua conta deve estar sempre segura
+                        </Text>
+                      </View>
+                    </View>
 
                     <Controller
                       control={control}
@@ -397,8 +409,12 @@ export default function SignUpOrfanatoScreen() {
                             secureTextEntry
                             returnKeyType="next"
                           />
-                          {errors.senha && (
+                          {errors.senha ? (
                             <Text style={styles.errorText}>{errors.senha.message}</Text>
+                          ) : (
+                            <Text style={styles.helperText}>
+                              Mínimo de 8 caracteres com letras e números
+                            </Text>
                           )}
                         </View>
                       )}
@@ -427,27 +443,22 @@ export default function SignUpOrfanatoScreen() {
                             secureTextEntry
                             returnKeyType="done"
                           />
-                          {errors.confirmarSenha && (
+                          {errors.confirmarSenha ? (
                             <Text style={styles.errorText}>
                               {errors.confirmarSenha.message}
                             </Text>
+                          ) : (
+                            <Text style={styles.helperText}>As senhas precisam ser igual</Text>
                           )}
                         </View>
                       )}
                     />
 
-                    <Text style={styles.helperText}>
-                      A senha deve ter pelo menos 6 caracteres
-                    </Text>
-
-                    {/* Submit button: cor muda conforme validação completa */}
                     <Pressable
                       style={[
                         styles.button,
-                        {
-                          backgroundColor: isValid ? darkGreen : Colors.verdeAgua,
-                        },
-                        loading ? styles.buttonDisabled : null,
+                        { backgroundColor: isValid ? darkGreen : Colors.verdeAgua },
+                        (!isValid || loading) ? styles.buttonDisabled : null,
                       ]}
                       onPress={handleSubmit(onSubmit)}
                       disabled={loading || !isValid}
@@ -455,7 +466,10 @@ export default function SignUpOrfanatoScreen() {
                       {loading ? (
                         <ActivityIndicator color="#fff" />
                       ) : (
-                        <Text style={styles.buttonText}>Cadastrar Orfanato</Text>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                          <Text style={styles.buttonText}>Caastrar Orfanato</Text>
+                          <MaterialIcons name="home" size={18} color="#fff" />
+                        </View>
                       )}
                     </Pressable>
 
@@ -589,6 +603,17 @@ const styles = StyleSheet.create({
     elevation: 8,
     zIndex: 8,
   },
+  step2Header: {
+    width: "100%",
+    alignItems: "center",
+    marginBottom: -40,
+    zIndex: 6,
+  },
+  illustrationCenter: {
+    width: 180,
+    height: 180,
+    marginTop: 0,
+  },
   sectionTitle: {
     fontSize: 14,
     fontWeight: "700",
@@ -656,4 +681,44 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 14,
   },
+  step2Header: {
+  width: "100%",
+  alignItems: "center",
+  marginBottom: 8,
+  zIndex: 6,
+},
+illustrationCenter: {
+  width: 220,
+  height: 180,
+  marginTop: 8,
+},
+title: {
+  fontSize: 22,
+  fontWeight: "800",
+  color: "#111827",
+  textAlign: "center",
+  marginBottom: 4,
+},
+subtitle: {
+  fontSize: 12,
+  color: "#4b5563",
+  lineHeight: 16,
+  textAlign: "center",
+  marginBottom: 4,
+},
+sectionTitleRow: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginBottom: 14,
+},
+sectionTitle: {
+  fontSize: 14,
+  fontWeight: "700",
+  color: "#111827",
+},
+sectionSubtitle: {
+  fontSize: 11,
+  color: "#6b7280",
+  marginTop: 1,
+},
 });
