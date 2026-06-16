@@ -1,33 +1,35 @@
 import { MaterialIcons } from "@expo/vector-icons";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
+  ActivityIndicator,
   Alert,
   Image,
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
-  ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { MaskedTextInput } from "react-native-mask-text";
 import { z } from "zod";
 import Colors from "../../constants/Colors";
 import { supabase } from "../../lib/supabase";
 import { signUpBaseSchema, signUpSchema } from "../../lib/validation";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { MaskedTextInput } from "react-native-mask-text";
 
 type FormValues = z.infer<typeof signUpSchema>;
 
 export default function SignUpOrfanatoScreen() {
   const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
+  const [senhaVisivel, setSenhaVisivel] = useState(false);
+  const [confirmarSenhaVisivel, setConfirmarSenhaVisivel] = useState(false);
 
   const {
     control,
@@ -51,7 +53,6 @@ export default function SignUpOrfanatoScreen() {
     },
   });
 
-  // Watch fields used in step 1 to compute step1 validity
   const watchedStep1 = watch(["nome", "email", "cnpj", "endereco", "telefone"]);
   const step1Valid = signUpBaseSchema
     .safeParse({
@@ -62,6 +63,15 @@ export default function SignUpOrfanatoScreen() {
       telefone: watchedStep1[4],
     })
     .success;
+
+  const watchedSenha = watch("senha");
+  const watchedConfirmar = watch("confirmarSenha");
+  const step2Valid =
+    watchedSenha.length >= 6 &&
+    watchedConfirmar.length >= 6 &&
+    watchedSenha === watchedConfirmar &&
+    !errors.senha &&
+    !errors.confirmarSenha;
 
   function focusFirstError() {
     const keys = Object.keys(errors) as (keyof FormValues)[];
@@ -132,7 +142,6 @@ export default function SignUpOrfanatoScreen() {
     }
   }
 
-  // fallback caso Colors.verdeAguaEscuro não exista
   const darkGreen = (Colors as any).verdeAguaEscuro ?? Colors.verdeAgua;
 
   return (
@@ -149,14 +158,26 @@ export default function SignUpOrfanatoScreen() {
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.container}>
             <View style={styles.card}>
-              {/* Ilustração aproximada da caixa branca */}
-              <View style={styles.illustrationAbsolute}>
-                <Image
-                  source={require("../../assets/images/img-crianca-casa.png")}
-                  style={styles.illustration}
-                  resizeMode="contain"
-                />
-              </View>
+
+              {/* Botão de voltar no canto superior esquerdo com fundo circular branco */}
+              <Pressable
+                onPress={() => router.back()}
+                style={styles.backButtonLeft}
+                hitSlop={8}
+                accessibilityLabel="Voltar"
+              >
+                <MaterialIcons name="arrow-back" size={20} color={Colors.verdeAgua} />
+              </Pressable>
+
+              {step === 1 && (
+                <View style={styles.illustrationAbsolute}>
+                  <Image
+                    source={require("../../assets/images/img-crianca-casa.png")}
+                    style={styles.illustration}
+                    resizeMode="contain"
+                  />
+                </View>
+              )}
 
               <Image
                 source={require("../../assets/images/logo-sbg.png")}
@@ -174,7 +195,7 @@ export default function SignUpOrfanatoScreen() {
                     <View style={styles.headerText}>
                       <Text style={styles.titleBlack}>Cadastro de</Text>
                       <Text style={styles.titleGreen}>Orfanato</Text>
-                      <Text style={styles.subtitle}>
+                      <Text style={styles.subtitle1}>
                         Cadastre sua instituição e{"\n"}conecte-se a pessoas
                         {"\n"}dispostas a ajudar
                       </Text>
@@ -334,13 +355,10 @@ export default function SignUpOrfanatoScreen() {
                       )}
                     />
 
-                    {/* Next button: cor muda conforme validação da etapa 1 */}
                     <Pressable
                       style={[
                         styles.button,
-                        {
-                          backgroundColor: step1Valid ? darkGreen : Colors.verdeAgua,
-                        },
+                        { backgroundColor: step1Valid ? darkGreen : Colors.verdeAgua },
                         !step1Valid ? styles.buttonDisabled : null,
                       ]}
                       onPress={onNextStep}
@@ -361,7 +379,6 @@ export default function SignUpOrfanatoScreen() {
                 </>
               ) : (
                 <>
-                  {/* Cabeçalho: texto acima da imagem, centralizado */}
                   <View style={styles.step2Header}>
                     <Text style={styles.title}>Crie sua senha</Text>
                     <Text style={styles.subtitle}>
@@ -375,7 +392,6 @@ export default function SignUpOrfanatoScreen() {
                   </View>
 
                   <View style={styles.formBox}>
-                    {/* Ícone + título da seção */}
                     <View style={styles.sectionTitleRow}>
                       <MaterialIcons name="lock" size={20} color={Colors.verdeAgua} />
                       <View style={{ marginLeft: 8 }}>
@@ -402,18 +418,29 @@ export default function SignUpOrfanatoScreen() {
                             placeholder="Digite sua senha"
                             style={[
                               styles.input,
+                              { paddingRight: 48 },
                               errors.senha ? styles.inputErrorBorder : null,
                             ]}
                             value={value}
                             onChangeText={onChange}
-                            secureTextEntry
+                            secureTextEntry={!senhaVisivel}
                             returnKeyType="next"
                           />
+                          <Pressable
+                            style={styles.eyeButton}
+                            onPress={() => setSenhaVisivel(!senhaVisivel)}
+                          >
+                            <MaterialIcons
+                              name={senhaVisivel ? "visibility" : "visibility-off"}
+                              size={20}
+                              color="#6b7280"
+                            />
+                          </Pressable>
                           {errors.senha ? (
                             <Text style={styles.errorText}>{errors.senha.message}</Text>
                           ) : (
                             <Text style={styles.helperText}>
-                              Mínimo de 8 caracteres com letras e números
+                              Mínimo de 6 caracteres
                             </Text>
                           )}
                         </View>
@@ -436,19 +463,32 @@ export default function SignUpOrfanatoScreen() {
                             placeholder="Digite sua senha novamente"
                             style={[
                               styles.input,
+                              { paddingRight: 48 },
                               errors.confirmarSenha ? styles.inputErrorBorder : null,
                             ]}
                             value={value}
                             onChangeText={onChange}
-                            secureTextEntry
+                            secureTextEntry={!confirmarSenhaVisivel}
                             returnKeyType="done"
                           />
+                          <Pressable
+                            style={styles.eyeButton}
+                            onPress={() => setConfirmarSenhaVisivel(!confirmarSenhaVisivel)}
+                          >
+                            <MaterialIcons
+                              name={confirmarSenhaVisivel ? "visibility" : "visibility-off"}
+                              size={20}
+                              color="#6b7280"
+                            />
+                          </Pressable>
                           {errors.confirmarSenha ? (
                             <Text style={styles.errorText}>
                               {errors.confirmarSenha.message}
                             </Text>
                           ) : (
-                            <Text style={styles.helperText}>As senhas precisam ser igual</Text>
+                            <Text style={styles.helperText}>
+                              As senhas precisam ser iguais
+                            </Text>
                           )}
                         </View>
                       )}
@@ -457,17 +497,17 @@ export default function SignUpOrfanatoScreen() {
                     <Pressable
                       style={[
                         styles.button,
-                        { backgroundColor: isValid ? darkGreen : Colors.verdeAgua },
-                        (!isValid || loading) ? styles.buttonDisabled : null,
+                        { backgroundColor: step2Valid ? darkGreen : Colors.verdeAgua },
+                        (!step2Valid || loading) ? styles.buttonDisabled : null,
                       ]}
                       onPress={handleSubmit(onSubmit)}
-                      disabled={loading || !isValid}
+                      disabled={loading || !step2Valid}
                     >
                       {loading ? (
                         <ActivityIndicator color="#fff" />
                       ) : (
                         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                          <Text style={styles.buttonText}>Caastrar Orfanato</Text>
+                          <Text style={styles.buttonText}>Cadastrar Orfanato</Text>
                           <MaterialIcons name="home" size={18} color="#fff" />
                         </View>
                       )}
@@ -563,9 +603,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: "800",
-    color: Colors.verdeAgua,
+    color: "#111827",
+    textAlign: "center",
     marginBottom: 4,
-    textAlign: "left",
+  },
+  subtitle: {
+    fontSize: 12,
+    color: "#4b5563",
+    lineHeight: 16,
+    textAlign: "center",
+    marginBottom: 4,
   },
   titleBlack: {
     fontSize: 24,
@@ -580,7 +627,7 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     marginBottom: 6,
   },
-  subtitle: {
+  subtitle1: {
     fontSize: 12,
     color: "#4b5563",
     lineHeight: 16,
@@ -603,23 +650,6 @@ const styles = StyleSheet.create({
     elevation: 8,
     zIndex: 8,
   },
-  step2Header: {
-    width: "100%",
-    alignItems: "center",
-    marginBottom: -40,
-    zIndex: 6,
-  },
-  illustrationCenter: {
-    width: 180,
-    height: 180,
-    marginTop: 0,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 10,
-  },
   inputGroup: { position: "relative", marginBottom: 10 },
   inputLabel: {
     fontSize: 11,
@@ -628,6 +658,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   inputIcon: { position: "absolute", left: 12, top: 34, zIndex: 1 },
+  eyeButton: {
+    position: "absolute",
+    right: 12,
+    top: 34,
+    zIndex: 1,
+  },
   input: {
     width: "100%",
     height: 46,
@@ -653,7 +689,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: "#9ca3af",
     marginBottom: 8,
-    marginTop: -2,
+    marginTop: 4,
   },
   button: {
     paddingVertical: 14,
@@ -682,43 +718,48 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   step2Header: {
-  width: "100%",
-  alignItems: "center",
-  marginBottom: 8,
-  zIndex: 6,
-},
-illustrationCenter: {
-  width: 220,
-  height: 180,
-  marginTop: 8,
-},
-title: {
-  fontSize: 22,
-  fontWeight: "800",
-  color: "#111827",
-  textAlign: "center",
-  marginBottom: 4,
-},
-subtitle: {
-  fontSize: 12,
-  color: "#4b5563",
-  lineHeight: 16,
-  textAlign: "center",
-  marginBottom: 4,
-},
-sectionTitleRow: {
-  flexDirection: "row",
-  alignItems: "center",
-  marginBottom: 14,
-},
-sectionTitle: {
-  fontSize: 14,
-  fontWeight: "700",
-  color: "#111827",
-},
-sectionSubtitle: {
-  fontSize: 11,
-  color: "#6b7280",
-  marginTop: 1,
-},
+    width: "100%",
+    alignItems: "center",
+    marginBottom: -37,
+    zIndex: 6,
+  },
+  illustrationCenter: {
+    width: 220,
+    height: 180,
+    marginTop: 0,
+  },
+  sectionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  sectionSubtitle: {
+    fontSize: 11,
+    color: "#6b7280",
+    marginTop: 1,
+  },
+
+  /* botão de voltar no canto superior esquerdo do card */
+  backButtonLeft: {
+    position: "absolute",
+    left: 12,
+    top: Platform.OS === "ios" ? 18 : 12,
+    zIndex: 40,
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ffffff",
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 6,
+  },
 });
