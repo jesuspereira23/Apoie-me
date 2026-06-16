@@ -33,11 +33,15 @@ export default function SignUpDoadorScreen() {
   const [empresa, setEmpresa] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // estados para visibilidade das senhas
+  const [senhaVisivel, setSenhaVisivel] = useState(false);
+  const [confirmarSenhaVisivel, setConfirmarSenhaVisivel] = useState(false);
+
   const {
     control,
     handleSubmit,
     trigger,
-    formState: { errors, isValid },
+    formState: { errors },
     getValues,
     setFocus,
     watch,
@@ -57,6 +61,14 @@ export default function SignUpDoadorScreen() {
   const step1Valid = signUpDoadorBaseSchema
     .pick({ nome: true, email: true })
     .safeParse({ nome: watchedStep1[0], email: watchedStep1[1] }).success;
+  const watchedSenha = watch("senha");
+  const watchedConfirmar = watch("confirmarSenha");
+  const step2Valid =
+    watchedSenha.length >= 8 &&
+    watchedConfirmar.length >= 8 &&
+    watchedSenha === watchedConfirmar &&
+    !errors.senha &&
+    !errors.confirmarSenha;
 
   const darkGreen = (Colors as any).verdeAguaEscuro ?? Colors.verdeAgua;
 
@@ -128,6 +140,17 @@ export default function SignUpDoadorScreen() {
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.container}>
             <View style={styles.card}>
+              {/* Botão de voltar no canto superior esquerdo */}
+              <Pressable
+                onPress={() => router.back()}
+                style={styles.backButtonLeft}
+                hitSlop={8}
+                accessibilityLabel="Voltar"
+              >
+                <MaterialIcons name="arrow-back" size={22} color={Colors.verdeAgua} />
+              </Pressable>
+
+
               {/* Ilustração absoluta só na etapa 1 */}
               {step === 1 && (
                 <View style={styles.illustrationAbsolute}>
@@ -361,13 +384,25 @@ export default function SignUpDoadorScreen() {
                             placeholder="Digite sua senha"
                             style={[
                               styles.input,
+                              { paddingRight: 48 },
                               errors.senha ? styles.inputErrorBorder : null,
                             ]}
                             value={value}
                             onChangeText={onChange}
-                            secureTextEntry
+                            secureTextEntry={!senhaVisivel}
                             returnKeyType="next"
                           />
+                          <Pressable
+                            style={styles.eyeButton}
+                            onPress={() => setSenhaVisivel(!senhaVisivel)}
+                          >
+                            <MaterialIcons
+                              name={senhaVisivel ? "visibility" : "visibility-off"}
+                              size={20}
+                              color="#6b7280"
+                            />
+                          </Pressable>
+
                           <Text style={styles.helperText}>
                             Mínimo de 8 caracteres com letras e números
                           </Text>
@@ -397,15 +432,31 @@ export default function SignUpDoadorScreen() {
                             placeholder="Digite sua senha novamente"
                             style={[
                               styles.input,
+                              { paddingRight: 48 },
                               errors.confirmarSenha
                                 ? styles.inputErrorBorder
                                 : null,
                             ]}
                             value={value}
                             onChangeText={onChange}
-                            secureTextEntry
+                            secureTextEntry={!confirmarSenhaVisivel}
                             returnKeyType="done"
                           />
+                          <Pressable
+                            style={styles.eyeButton}
+                            onPress={() =>
+                              setConfirmarSenhaVisivel(!confirmarSenhaVisivel)
+                            }
+                          >
+                            <MaterialIcons
+                              name={
+                                confirmarSenhaVisivel ? "visibility" : "visibility-off"
+                              }
+                              size={20}
+                              color="#6b7280"
+                            />
+                          </Pressable>
+
                           <Text style={styles.helperText}>
                             As senhas precisam ser igual
                           </Text>
@@ -422,14 +473,12 @@ export default function SignUpDoadorScreen() {
                       style={[
                         styles.button,
                         {
-                          backgroundColor: isValid
-                            ? darkGreen
-                            : Colors.verdeAgua,
+                          backgroundColor: step2Valid ? darkGreen : Colors.verdeAgua,
                         },
-                        loading ? styles.buttonDisabled : null,
+                        (!step2Valid || loading) ? styles.buttonDisabled : null,
                       ]}
                       onPress={handleSubmit(handleSignUp)}
-                      disabled={loading || !isValid}
+                      disabled={loading || !step2Valid}
                     >
                       {loading ? (
                         <ActivityIndicator color="#fff" />
@@ -495,7 +544,7 @@ const styles = StyleSheet.create({
   illustrationAbsolute: {
     position: "absolute",
     right: 8,
-    top: 119,
+    top: 125,
     width: 160,
     height: 200,
     zIndex: 4,
@@ -712,4 +761,34 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 14,
   },
+
+  /* botão olho para alternar visibilidade da senha */
+  eyeButton: {
+    position: "absolute",
+    right: 12,
+    top: 12,
+    zIndex: 2,
+    height: 46,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  backButtonLeft: {
+    position: "absolute",
+    left: 12,
+    top: Platform.OS === "ios" ? 12 : 12,
+    zIndex: 40,
+    width: 40,
+    height: 40,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ffffff", // fundo circular branco
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 6,
+  },
+
 });
