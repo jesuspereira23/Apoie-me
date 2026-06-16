@@ -62,12 +62,12 @@ export default function HomeScreen() {
           </View>
 
           {/* Botões principais */}
-          <Pressable style={styles.primaryButton} onPress={() => router.push('../singup/doador')}>
+          <Pressable style={styles.primaryButton} onPress={() => router.push('../signup/doador')}>
             <Text style={styles.primaryButtonText}>Quero ser um apoiador</Text>
             <Ionicons name="heart" size={18} color="#fff" style={styles.buttonIconRight} />
           </Pressable>
 
-          <Pressable style={styles.secondaryButton} onPress={() => router.push('../singup/orfanato')}>
+          <Pressable style={styles.secondaryButton} onPress={() => router.push('../signup/orfanato')}>
             <Text style={styles.secondaryButtonText}>Sou um orfanato</Text>
           </Pressable>
 
