@@ -53,3 +53,27 @@ export const signUpDoadorSchema = signUpDoadorBaseSchema
 
 export type SignUpDoadorBase = z.infer<typeof signUpDoadorBaseSchema>;
 export type SignUpDoadorFull = z.infer<typeof signUpDoadorSchema>;
+
+// ─── Login ───────────────────────────────────────────────────────────────────
+
+export const loginSchema = z.object({
+  email: z
+    .string()
+    .min(1, "O e-mail é obrigatório")
+    .email("Digite um e-mail válido")
+    .toLowerCase()
+    .trim(),
+  senha: z
+    .string()
+    .min(1, "A senha é obrigatória")
+    .min(6, "A senha deve ter pelo menos 6 caracteres")
+    .max(72, "A senha não pode ter mais de 72 caracteres")
+    .refine((s) => /[A-Za-z]/.test(s), {
+      message: "A senha deve conter pelo menos uma letra",
+    })
+    .refine((s) => /[0-9]/.test(s), {
+      message: "A senha deve conter pelo menos um número",
+    }),
+});
+
+export type LoginForm = z.infer<typeof loginSchema>;
