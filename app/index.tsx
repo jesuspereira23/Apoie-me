@@ -1,6 +1,6 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import React, { useState } from "react";
 import { Image, ImageBackground, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Colors from '../constants/Colors';
 

@@ -1,23 +1,15 @@
-import { AuthProvider } from "@/context/AuthContext";
-import { Stack } from "expo-router";
+// app/_layout.tsx
+import { AuthProvider } from "@/context/AuthContext"; // ajuste se necessário
+import { Slot } from "expo-router";
+import React from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-export default function Layout() {
+export default function RootLayout() {
   return (
-    <AuthProvider>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          animation: "fade",
-          animationDuration: 300,
-          animationTypeForReplace: "push",
-        }}
-      >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="signup/doador" />
-        <Stack.Screen name="signup/orfanato" />
-        <Stack.Screen name="(tabs)" />
-      </Stack>
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <Slot />
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }

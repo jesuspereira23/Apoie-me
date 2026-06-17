@@ -1,7 +1,7 @@
 import { MaterialIcons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
@@ -16,11 +16,13 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Modalize } from "react-native-modalize";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Colors from "../constants/Colors";
 import { supabase } from "../lib/supabase";
 import { loginSchema, type LoginForm } from "../lib/validation";
+import { replaceWithRetry } from "../utils/navigation";
+
 
 export default function LoginScreen() {
   const [senhaVisivel, setSenhaVisivel] = useState(false);
@@ -39,27 +41,6 @@ export default function LoginScreen() {
     defaultValues: { email: "", senha: "" },
   });
 
-  async function onSubmit(data: LoginForm) {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.senha,
-      });
-
-      if (error) {
-        Alert.alert("Erro ao entrar", error.message);
-        return;
-      }
-
-      router.replace("/(tabs)");
-    } catch (e: any) {
-      Alert.alert("Erro", e?.message ?? "Erro desconhecido");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   const darkGreen = (Colors as any).verdeAguaEscuro ?? Colors.verdeAgua;
 
   function openRegisterSheet() {
@@ -72,12 +53,78 @@ export default function LoginScreen() {
 
   function goToOrfanato() {
     closeRegisterSheet();
-    router.push("../cadastro/orfanato");
+    router.push("/signup/orfanato");
   }
 
   function goToDoador() {
     closeRegisterSheet();
-    router.push("../cadastro/doador");
+    router.push("/signup/doador");
+  }
+
+  async function onSubmit(data: LoginForm) {
+    setLoading(true);
+    try {
+      // 1) Autentica no Supabase
+      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.senha,
+      });
+
+      if (signInError) {
+        Alert.alert("Erro ao entrar", signInError.message);
+        return;
+      }
+
+      const userId = authData.user?.id;
+      if (!userId) {
+        Alert.alert("Erro", "Não foi possível obter o identificador do usuário.");
+        return;
+      }
+
+      // 2) Verifica se existe registro na tabela doadores
+      const { data: doadorData, error: doadorError } = await supabase
+        .from("doadores")
+        .select("id, user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (doadorError) {
+        console.warn("Erro ao consultar doadores:", doadorError.message);
+      }
+
+      if (doadorData) {
+        // Redireciona para a área do doador (apoiador)
+        await replaceWithRetry("/(tabs)/doador/home");
+        return;
+      }
+
+      // 3) Verifica se existe registro na tabela orfanatos
+      const { data: orfanatoData, error: orfanatoError } = await supabase
+        .from("orfanatos")
+        .select("id, user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (orfanatoError) {
+        console.warn("Erro ao consultar orfanatos:", orfanatoError.message);
+      }
+
+      if (orfanatoData) {
+        // Redireciona para a área do orfanato
+        await replaceWithRetry("/(tabs)/orfanato/home");
+        return;
+      }
+
+      // 4) Se não encontrado em nenhuma tabela
+      Alert.alert(
+        "Atenção",
+        "Login efetuado, mas não foi encontrado um perfil associado (doador ou orfanato)."
+      );
+    } catch (e: any) {
+      Alert.alert("Erro", e?.message ?? "Erro desconhecido");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -94,7 +141,6 @@ export default function LoginScreen() {
         >
           <SafeAreaView style={styles.safeArea}>
             <View style={styles.container}>
-              {/* Botão de voltar no canto superior esquerdo (opcional) */}
               <Pressable
                 onPress={() => router.back()}
                 style={styles.backButtonLeft}
@@ -114,7 +160,6 @@ export default function LoginScreen() {
               <Text style={styles.subtitle}>Seja Bem Vindo{"\n"}De Volta!!!</Text>
 
               <View style={styles.card}>
-                {/* E-mail */}
                 <Controller
                   control={control}
                   name="email"
@@ -133,7 +178,7 @@ export default function LoginScreen() {
                             styles.input,
                             errors.email ? styles.inputErrorBorder : null,
                           ]}
-                          placeholder="exemplo@gmail.com"
+                          placeholder="Digite seu e-mail"
                           placeholderTextColor="#9ca3af"
                           value={value}
                           onChangeText={onChange}
@@ -149,7 +194,6 @@ export default function LoginScreen() {
                   )}
                 />
 
-                {/* Senha */}
                 <Controller
                   control={control}
                   name="senha"
@@ -169,7 +213,7 @@ export default function LoginScreen() {
                             { paddingRight: 48 },
                             errors.senha ? styles.inputErrorBorder : null,
                           ]}
-                          placeholder="ex3mpL0"
+                          placeholder="Digite sua senha"
                           placeholderTextColor="#9ca3af"
                           value={value}
                           onChangeText={onChange}
@@ -195,7 +239,6 @@ export default function LoginScreen() {
                   )}
                 />
 
-                {/* Botão Entrar */}
                 <Pressable
                   style={[
                     styles.button,
@@ -212,14 +255,9 @@ export default function LoginScreen() {
                   )}
                 </Pressable>
 
-                {/* Link Cadastrar abre bottom sheet */}
-                <Pressable
-                  style={styles.secondaryButton}
-                  onPress={openRegisterSheet}
-                >
+                <Pressable style={styles.secondaryButton} onPress={openRegisterSheet}>
                   <Text style={styles.secondaryButtonText}>
-                    Não Possui Cadastro?{" "}
-                    <Text style={styles.secondaryButtonBold}>Cadastrar</Text>
+                    Não Possui Cadastro? <Text style={styles.secondaryButtonBold}>Cadastrar</Text>
                   </Text>
                 </Pressable>
               </View>
@@ -228,7 +266,6 @@ export default function LoginScreen() {
         </KeyboardAvoidingView>
       </ImageBackground>
 
-      {/* Bottom sheet (react-native-modalize) */}
       <Modalize
         ref={modalizeRef}
         adjustToContentHeight
@@ -275,15 +312,15 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   logo: {
-    width: 200,
-    height: 110,
-    marginBottom: 4,
+    width: 250,
+    height: 160,
+    marginBottom: 15,
   },
   title: {
     fontSize: 26,
     fontWeight: "800",
     color: "#111827",
-    marginBottom: 4,
+    marginBottom: 15,
     textAlign: "center",
   },
   subtitle: {
@@ -291,7 +328,7 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     textAlign: "center",
     lineHeight: 20,
-    marginBottom: 24,
+    marginBottom: 35,
   },
   card: {
     width: "100%",
@@ -349,7 +386,7 @@ const styles = StyleSheet.create({
   eyeButton: {
     position: "absolute",
     right: 12,
-    top: 13,
+    top: 2,
     zIndex: 2,
     height: 46,
     justifyContent: "center",
@@ -386,8 +423,6 @@ const styles = StyleSheet.create({
     color: Colors.verdeAgua,
     fontWeight: "700",
   },
-
-  /* botão de voltar no canto superior esquerdo do container (opcional) */
   backButtonLeft: {
     position: "absolute",
     left: 12,
@@ -407,13 +442,13 @@ const styles = StyleSheet.create({
   },
 });
 
-/* estilos do bottom sheet */
 const sheetStyles = StyleSheet.create({
   container: {
     paddingHorizontal: 18,
     paddingTop: 18,
     paddingBottom: 28,
     alignItems: "center",
+    backgroundColor: "#fff",
   },
   title: {
     fontSize: 16,

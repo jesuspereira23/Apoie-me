@@ -1,7 +1,8 @@
+// app/(tabs)/orfanato/index.tsx
 import { MaterialIcons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
-import { useState } from "react";
+import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
@@ -16,10 +17,11 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { MaskedTextInput } from "react-native-mask-text";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 import Colors from "../../constants/Colors";
+import { useAuth } from "../../context/AuthContext"; // ajuste se necessário
 import { supabase } from "../../lib/supabase";
 import { signUpBaseSchema, signUpSchema } from "../../lib/validation";
 
@@ -30,6 +32,8 @@ export default function SignUpOrfanatoScreen() {
   const [loading, setLoading] = useState(false);
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [confirmarSenhaVisivel, setConfirmarSenhaVisivel] = useState(false);
+
+  const { refresh } = useAuth();
 
   const {
     control,
@@ -108,19 +112,29 @@ export default function SignUpOrfanatoScreen() {
   async function onSubmit(data: FormValues) {
     setLoading(true);
     try {
+      // 1) cria credenciais no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.senha,
       });
 
+      console.log("signUp result:", authData, authError);
       if (authError) {
         Alert.alert("Erro", authError.message);
-        setLoading(false);
         return;
       }
 
+      // 2) espera que user exista (você disse que confirmação está desativada)
+      const userId = authData?.user?.id ?? authData?.session?.user?.id;
+      if (!userId) {
+        console.warn("signUp não retornou user mesmo com confirmação desativada:", authData);
+        Alert.alert("Erro", "Não foi possível obter o usuário após o cadastro.");
+        return;
+      }
+
+      // 3) insere perfil na tabela orfanatos
       const { error: insertError } = await supabase.from("orfanatos").insert({
-        user_id: authData.user?.id,
+        user_id: userId,
         nome: data.nome,
         cnpj: data.cnpj,
         email: data.email,
@@ -128,14 +142,23 @@ export default function SignUpOrfanatoScreen() {
         telefone: data.telefone,
       });
 
+      console.log("insertError:", insertError);
       if (insertError) {
         Alert.alert("Erro", insertError.message);
-        setLoading(false);
         return;
       }
 
-      router.replace("/(tabs)/orfanato");
+      // 4) força refresh do AuthContext para popular userType antes do redirect
+      try {
+        await refresh();
+      } catch (e) {
+        console.warn("refresh after signup failed:", e);
+      }
+
+      // 5) redireciona para o painel do orfanato (index dentro de (tabs)/orfanato)
+      router.replace("/(tabs)/orfanato/home");
     } catch (e: any) {
+      console.warn("onSubmit error:", e);
       Alert.alert("Erro", e?.message ?? "Erro desconhecido");
     } finally {
       setLoading(false);
@@ -158,8 +181,6 @@ export default function SignUpOrfanatoScreen() {
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.container}>
             <View style={styles.card}>
-
-              {/* Botão de voltar no canto superior esquerdo com fundo circular branco */}
               <Pressable
                 onPress={() => router.back()}
                 style={styles.backButtonLeft}
@@ -170,7 +191,7 @@ export default function SignUpOrfanatoScreen() {
               </Pressable>
 
               {step === 1 && (
-                <View style={styles.illustrationAbsolute}>
+                <View style={styles.illustrationAbsolute} pointerEvents="none">
                   <Image
                     source={require("../../assets/images/img-crianca-casa.png")}
                     style={styles.illustration}
@@ -568,6 +589,7 @@ const styles = StyleSheet.create({
     overflow: "visible",
     alignItems: "flex-end",
     justifyContent: "flex-start",
+    pointerEvents: "none",
   },
   illustration: {
     width: "130%",
@@ -743,13 +765,11 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     marginTop: 1,
   },
-
-  /* botão de voltar no canto superior esquerdo do card */
   backButtonLeft: {
     position: "absolute",
     left: 12,
     top: Platform.OS === "ios" ? 18 : 12,
-    zIndex: 40,
+    zIndex: 50,
     width: 40,
     height: 40,
     borderRadius: 999,

@@ -1,7 +1,8 @@
+// app/signup/doador.tsx
 import { MaterialIcons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
-import { useState } from "react";
+import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
@@ -20,6 +21,7 @@ import {
 import { MaskedTextInput } from "react-native-mask-text";
 import { z } from "zod";
 import Colors from "../../constants/Colors";
+import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabase";
 import {
   signUpDoadorBaseSchema,
@@ -33,9 +35,10 @@ export default function SignUpDoadorScreen() {
   const [empresa, setEmpresa] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // estados para visibilidade das senhas
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [confirmarSenhaVisivel, setConfirmarSenhaVisivel] = useState(false);
+
+  const { refresh } = useAuth();
 
   const {
     control,
@@ -61,6 +64,7 @@ export default function SignUpDoadorScreen() {
   const step1Valid = signUpDoadorBaseSchema
     .pick({ nome: true, email: true })
     .safeParse({ nome: watchedStep1[0], email: watchedStep1[1] }).success;
+
   const watchedSenha = watch("senha");
   const watchedConfirmar = watch("confirmarSenha");
   const step2Valid =
@@ -95,31 +99,52 @@ export default function SignUpDoadorScreen() {
   async function handleSignUp(data: FormValues) {
     setLoading(true);
     try {
+      // 1) cria credenciais no Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.senha,
       });
 
+      console.log("doador signUp result:", authData, authError);
       if (authError) {
         Alert.alert("Erro", authError.message);
         return;
       }
 
+      // 2) espera que user exista (assumindo confirmação desativada)
+      const userId = authData?.user?.id ?? authData?.session?.user?.id;
+      if (!userId) {
+        console.warn("signUp não retornou user:", authData);
+        Alert.alert("Erro", "Não foi possível obter o usuário após o cadastro.");
+        return;
+      }
+
+      // 3) insere perfil na tabela doadores
       const { error: insertError } = await supabase.from("doadores").insert({
-        user_id: authData.user?.id,
+        user_id: userId,
         nome: data.nome,
         email: data.email,
         telefone: data.telefone,
         empresa,
       });
 
+      console.log("doadores insertError:", insertError);
       if (insertError) {
         Alert.alert("Erro", insertError.message);
         return;
       }
 
-      router.replace("/(tabs)/apoiador");
+      // 4) força refresh do AuthContext para popular userType antes do redirect
+      try {
+        await refresh();
+      } catch (e) {
+        console.warn("refresh after doador signup failed:", e);
+      }
+
+      // 5) redireciona para o painel do doador (index dentro de (tabs)/doador)
+      router.replace("/(tabs)/doador/home");
     } catch (e: any) {
+      console.warn("handleSignUp error:", e);
       Alert.alert("Erro", e?.message ?? "Erro desconhecido");
     } finally {
       setLoading(false);
@@ -140,7 +165,6 @@ export default function SignUpDoadorScreen() {
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.container}>
             <View style={styles.card}>
-              {/* Botão de voltar no canto superior esquerdo */}
               <Pressable
                 onPress={() => router.back()}
                 style={styles.backButtonLeft}
@@ -150,10 +174,8 @@ export default function SignUpDoadorScreen() {
                 <MaterialIcons name="arrow-back" size={22} color={Colors.verdeAgua} />
               </Pressable>
 
-
-              {/* Ilustração absoluta só na etapa 1 */}
               {step === 1 && (
-                <View style={styles.illustrationAbsolute}>
+                <View style={styles.illustrationAbsolute} pointerEvents="none">
                   <Image
                     source={require("../../assets/images/img-familia.png")}
                     style={styles.illustration}
@@ -186,7 +208,6 @@ export default function SignUpDoadorScreen() {
                   </View>
 
                   <View style={styles.formBox}>
-                    {/* Nome */}
                     <Controller
                       control={control}
                       name="nome"
@@ -219,7 +240,6 @@ export default function SignUpDoadorScreen() {
                       )}
                     />
 
-                    {/* Empresa - checkbox */}
                     <Pressable
                       style={styles.checkboxRow}
                       onPress={() => setEmpresa(!empresa)}
@@ -239,7 +259,6 @@ export default function SignUpDoadorScreen() {
                       </Text>
                     </Pressable>
 
-                    {/* Telefone */}
                     <Controller
                       control={control}
                       name="telefone"
@@ -274,7 +293,6 @@ export default function SignUpDoadorScreen() {
                       )}
                     />
 
-                    {/* Email */}
                     <Controller
                       control={control}
                       name="email"
@@ -336,12 +354,11 @@ export default function SignUpDoadorScreen() {
                 </>
               ) : (
                 <>
-                  {/* Título e imagem centralizados acima do formBox */}
                   <View style={styles.step2Header}>
                     <Text style={styles.titleBlack}>Crie sua senha</Text>
-                    <Text style={styles.subtitle}>
+                    <Text style={styles.subtitle1}>
                       Crie uma senha segura para acessar{"\n"}a conta do seu
-                      orfanato
+                      doador
                     </Text>
                     <Image
                       source={require("../../assets/images/img-familia.png")}
@@ -351,7 +368,6 @@ export default function SignUpDoadorScreen() {
                   </View>
 
                   <View style={styles.formBox}>
-                    {/* Dados de acesso com ícone */}
                     <View style={styles.sectionHeader}>
                       <MaterialIcons
                         name="lock"
@@ -367,7 +383,6 @@ export default function SignUpDoadorScreen() {
                       </View>
                     </View>
 
-                    {/* Senha */}
                     <Text style={styles.fieldLabel}>Senha</Text>
                     <Controller
                       control={control}
@@ -415,7 +430,6 @@ export default function SignUpDoadorScreen() {
                       )}
                     />
 
-                    {/* Confirmar senha */}
                     <Text style={styles.fieldLabel}>Confirmar senha</Text>
                     <Controller
                       control={control}
@@ -458,7 +472,7 @@ export default function SignUpDoadorScreen() {
                           </Pressable>
 
                           <Text style={styles.helperText}>
-                            As senhas precisam ser igual
+                            As senhas precisam ser iguais
                           </Text>
                           {errors.confirmarSenha && (
                             <Text style={styles.errorText}>
@@ -585,13 +599,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
     zIndex: 6,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: Colors.verdeAgua,
-    marginBottom: 4,
-    textAlign: "left",
-  },
   titleBlack: {
     fontSize: 24,
     fontWeight: "800",
@@ -604,13 +611,6 @@ const styles = StyleSheet.create({
     color: Colors.verdeAgua,
     lineHeight: 30,
     marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: "#4b5563",
-    lineHeight: 16,
-    marginBottom: 6,
-    textAlign: "center",
   },
   subtitle1: {
     fontSize: 12,
@@ -761,18 +761,15 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 14,
   },
-
-  /* botão olho para alternar visibilidade da senha */
   eyeButton: {
     position: "absolute",
     right: 12,
-    top: 12,
+    top: 2,
     zIndex: 2,
     height: 46,
     justifyContent: "center",
     alignItems: "center",
   },
-
   backButtonLeft: {
     position: "absolute",
     left: 12,
@@ -783,12 +780,11 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#ffffff", // fundo circular branco
+    backgroundColor: "#ffffff",
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 6,
   },
-
 });
